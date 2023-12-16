@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.js"></script>
+    <title>Bai toan nguoi dua thu</title>
+
+    <style>
+        body {
+            margin: 10;
+            overflow: auto;
+            background-image: url('Buu dien.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: -1;
+        }
+
+        canvas {
+
+            display: block;
+
+        }
+
+        #inputContainer {
+            display: flex;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #inputContainer label {
+            display: block;
+            margin-bottom: 5px;
+            font-family: sans-serif;
+            font-size: large;
+            color: rgb(245, 138, 103);
+        }
+
+        #inputContainer input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        button {
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: aliceblue;
+            transition-duration: 0.4s;
+            width: 100px;
+            height: 40px;
+            /* font-size: medium; */
+            border-color: rgb(0, 0, 139);
+            border-radius: 10px;
+            margin: auto;
+            display: block;
+            font-size: 12px;
+        }
+
+        button:hover {
+            background-color: rgb(0, 0, 139);
+            color: rgb(135, 206, 250);
+            border: 0.5cap;
+            /* font-size: large; */
+            font-size: 12px;
+
+        }
+
+        /* Add this to your existing styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .center{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+padding: 10px;
+        }
+
+        #inputMethod {
+    width: 200px;
+    padding: 8px;
+    box-sizing: border-box;
+    margin: 10px 0;
+}
+
+#fileInputContainer {
+    max-width: 300px;
+}
+    </style>
+</head>
+
+<body>
+    <canvas id="graphCanvas"></canvas>
+
+
+    <button style="display: none;" id="runButton">Run</button>
+
+    <h2 style="text-align: center;  color: rgb(116, 197, 247);"><b>Nhập số lượng bưu điện mỗi quận</b></h2>
+    <div id="inputContainer">
+
+        <div>
+            <label for="district_1">Quận 1:</label>
+            <input type="number" id="district_1" min="0">
+            <label for="district_2">Quận 3:</label>
+            <input type="number" id="district_2" min="0">
+            <label for="district_3">Quận 4:</label>
+            <input type="number" id="district_3" min="0">
+            <label for="district_4">Quận 5:</label>
+            <input type="number" id="district_4" min="0">
+            <label for="district_5">Quận 6:</label>
+            <input type="number" id="district_5" min="0">
+        </div>
+        <div>
+            <label for="district_6">Quận 7:</label>
+            <input type="number" id="district_6" min="0">
+            <label for="district_7">Quận 8:</label>
+            <input type="number" id="district_7" min="0">
+            <label for="district_8">Quận 10:</label>
+            <input type="number" id="district_8" min="0">
+            <label for="district_9">Quận 11:</label>
+            <input type="number" id="district_9" min="0">
+            <label for="district_10">Quận 12:</label>
+            <input type="number" id="district_10" min="0">
+        </div>
+    </div>
+
+
+    <h2 style="text-align: center; color: rgb(116, 197, 247);"><b>Chọn phương thức nhập khoảng cách giữa các bưu điện</b></h2>
+    <div class="center">
+        <select id="inputMethod">
+            <option value="prompt">Nhập bằng prompt</option>
+            <option value="file">Tải file lên</option>
+        </select>
+    
+        <div id="fileInputContainer">
+            <label style="font-weight: bold; font-size: large;" for="fileInput">Chọn file:</label>
+            <input type="file" id="fileInput" accept=".txt">
+        </div>
+    </div>
+
+    <button onclick="handleInputMethod()">Chọn phương thức</button>
+    <button id="resetButton">Reset</button>
+    <!-- <button onclick="enterLibraryNames()">Next</button> -->
+
+
+
+
+
+
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+
+            <div id="weightMatrixContainer">
+                <h2 style="text-align: center; color: rgb(116, 197, 247);">Thông báo</h2>
+                <p style="text-align: center; color: rgb(116, 197, 247);" id="pathInfo"></p>
+                <p style="text-align: center; color: rgb(116, 197, 247);" id="sumInfo"></p>
+                <h2 style="text-align: center; color: rgb(116, 197, 247);"><b>Ma trận trọng số</b></h2>
+                <div id="weightMatrix"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+
+
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const nodeRadius = 20;
+        const fontSize = 12;
+
+        let districts = [];
+
+        let libraryNames = {};
+        let distances = {};
+
+
+        let mainMatrix = []
+
+        const districtPositions = [];
+
+
+        let sum = 0;
+
+        class Graph {
+            constructor() {
+                this.n = 0;
+                this.G = [];
+            }
+        }
+
+        // Initialize a new graph
+        function initGraph(Gr) {
+            Gr.G = new Array(Gr.n).fill(null).map(() => new Array(Gr.n).fill(0));
+        }
+
+        const Gr = new Graph()
+
+        document.getElementById('resetButton').addEventListener('click', function () {
+    // Clear the data or perform necessary reset actions
+    clearData();
+});
+
+// Function to clear data
+function clearData() {
+    location.reload();
+}
+
+
+        function enterLibraryNames() {
+            // Khởi tạo mảng districts để lưu bưu điện của từng quận
+            districts = [];
+            let cnt=0;
+            for (let i = 0; i < 10; i++) {
+                let num = document.getElementById(`district_${i + 1}`).value;
+
+                if (num < 0) {
+                    alert('Vui lòng không nhập số âm.');
+                    return;
+                }else if(num>0){
+                    cnt+=num;
+                }
+                for (let j = 1; j <= num; j++) {
+                    if (i == 0) {
+                        districts.push(`1.${j}`);
+                    }
+                    if (i == 1) {
+                        districts.push(`3.${j}`);
+                    }
+                    if (i == 2) {
+                        districts.push(`4.${j}`);
+                    }
+                    if (i == 3) {
+                        districts.push(`5.${j}`);
+                    }
+                    if (i == 4) {
+                        districts.push(`6.${j}`);
+                    }
+                    if (i == 5) {
+                        districts.push(`7.${j}`);
+                    }
+                    if (i == 6) {
+                        districts.push(`8.${j}`);
+                    }
+                    if (i == 7) {
+                        districts.push(`10.${j}`);
+                    }
+                    if (i == 8) {
+                        districts.push(`11.${j}`);
+                    }
+                    if (i == 9) {
+                        districts.push(`12.${j}`);
+                    }
+                }
+            }
+
+            // Gán mảng districts vào biến global
+            if(cnt==0){
+                alert("Vui lòng nhập số bưu điện của mỗi quận !")
+                return;
+            }else if(cnt==1){
+                alert("Vui lòng nhập nhiều hơn 1 bưu điện !")
+                return;
+            }else{
+                window.districts = districts;
+            console.log(districts);
+            // Call enterDistances after entering library names
+            enterDistances();
+            }
+            // drawGraph()
+        }
+
+
+
+        function enterLibraryNames2() {
+            // Khởi tạo mảng districts để lưu bưu điện của từng quận
+            districts = [];
+            let cnt=0;
+            for (let i = 0; i < 10; i++) {
+                let num = document.getElementById(`district_${i + 1}`).value;
+
+                if (num < 0) {
+                    alert('Vui lòng không nhập số âm.');
+                    return;
+                }else if(num>0){
+                    cnt+=num;
+                }
+                for (let j = 1; j <= num; j++) {
+                    if (i == 0) {
+                        districts.push(`1.${j}`);
+                    }
+                    if (i == 1) {
+                        districts.push(`3.${j}`);
+                    }
+                    if (i == 2) {
+                        districts.push(`4.${j}`);
+                    }
+                    if (i == 3) {
+                        districts.push(`5.${j}`);
+                    }
+                    if (i == 4) {
+                        districts.push(`6.${j}`);
+                    }
+                    if (i == 5) {
+                        districts.push(`7.${j}`);
+                    }
+                    if (i == 6) {
+                        districts.push(`8.${j}`);
+                    }
+                    if (i == 7) {
+                        districts.push(`10.${j}`);
+                    }
+                    if (i == 8) {
+                        districts.push(`11.${j}`);
+                    }
+                    if (i == 9) {
+                        districts.push(`12.${j}`);
+                    }
+                }
+            }
+
+            // Gán mảng districts vào biến global
+            if(cnt==0){
+                alert("Vui lòng nhập số bưu điện của mỗi quận !")
+                return;
+            }else if(cnt==1){
+                alert("Vui lòng nhập nhiều hơn 1 bưu điện !")
+                return;
+            }else{
+               
+            }
+            // drawGraph()
+        }
+
+
+
+        function enterDistances() {
+            for (let i = 0; i < districts.length; i++) {
+                distances[districts[i]] = {};
+                for (let j = 0; j < districts.length; j++) {
+                    distances[districts[i]][districts[j]] = {};
+
+                    for (let k = 0; k < 1; k++) {
+                        for (let l = 0; l < 1; l++) {
+                            const library1 = `${districts[i]}`;
+                            const library2 = `${districts[j]}`;
+
+                            // Skip input if library1 is equal to library2
+                            if (library1 !== library2) {
+                                const distance = parseInt(
+                                    prompt(`Enter distance from Library  ${districts[i]} to Library ${districts[j]}:`),
+                                    10
+                                ) || 0;
+
+                                // Log the entered distance and libraries for debugging
+                                console.log(`Distance from ${library1} to ${library2} from District ${districts[i]} to District ${districts[j]}: ${distance}`);
+
+                                distances[districts[i]][districts[j]][library1] = distances[districts[i]][districts[j]][library1] || {};
+                                distances[districts[i]][districts[j]][library1][library2] = distance;
+                            }
+                        }
+                    }
+                }
+            }
+
+            console.log('Distances:', distances);
+
+            drawGraph();
+        }
+
+
+        function handleInputMethod() {
+            const inputMethod = document.getElementById('inputMethod').value;
+
+            if (inputMethod === 'prompt') {
+                enterLibraryNames();
+            } else if (inputMethod === 'file') {
+                enterLibraryNames2();
+
+                const fileInput = document.getElementById('fileInput');
+                
+                const file = fileInput.files[0];
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const fileContent = e.target.result;
+
+
+
+
+                        
+                            // const distancesFromFile = JSON.parse(fileContent);
+                            processDistancesFromFile(fileContent);
+                       
+                    };
+
+                    reader.readAsText(file);
+                } else {
+                    alert('Vui lòng chọn một file.');
+                }
+            }
+        }
+
+        function processDistancesFromFile(distancesFromFile) {
+    // Split the input string into rows
+            const rows = distancesFromFile.trim().split('\n');
+
+            // Clear the existing distances object
+            distances = {};
+            console.log("casc quan la : ", districts);
+
+            for (let i = 0; i < districts.length; i++) {
+                console.log("hi")
+                distances[districts[i]] = {};
+                const distanceValues = rows[i].split(' ');
+
+                for (let j = 0; j < districts.length; j++) {
+                    distances[districts[i]][districts[j]] = {};
+
+                    for (let k = 0; k < distanceValues.length; k++) {
+                        for (let l = 0; l < distanceValues.length; l++) {
+                            const library1 = `${districts[i]}`;
+                            const library2 = `${districts[j]}`;
+                            const distance = parseInt(distanceValues[j], 10);
+
+                            
+                            // Skip input if library1 is equal to library2
+                            if (library1 !== library2 && distance !== 0) {
+                            // console.log(library1 + " va " + library2 + " va " + distance);
+
+                                distances[districts[i]][districts[j]][library1] = distances[districts[i]][districts[j]][library1] || {};
+                                distances[districts[i]][districts[j]][library1][library2] = distance;
+                            }
+                        }
+                    }
+                }
+            }
+
+            console.log('Distances:', distances);
+
+            // Now, you can proceed with the rest of your code or functions that use the distances object.
+            drawGraph();
+        }
+
+
+
+        function createWeightMatrix() {
+            const matrix = [];
+            let mainMatrix = new Array(districts.length).fill([]).map(() => new Array(districts.length).fill(0));
+
+            console.log(distances)
+            for (let i = 0; i < districts.length; i++) {
+                const row = [];
+                for (let j = 0; j < districts.length; j++) {
+                    if (distances[districts[i]][districts[j]]) {
+                        const distanceValues = Object.values(distances[districts[i]][districts[j]]);
+                        // Sử dụng giá trị đầu tiên trong mảng distanceValues
+                        const weight = distanceValues.length > 0 ? distanceValues[0] : 0;
+
+                        row.push(weight);
+                    } else {
+                        row.push(0);
+                    }
+                }
+                matrix.push(row);
+            }
+
+
+            Gr.n = parseInt(districts.length, 10);
+            initGraph(Gr);
+            for (let i = 0; i < districts.length; i++) {
+                for (let j = 0; j < districts.length; j++) {
+                    if (typeof matrix[i][j] === 'object') {
+                        // Ví dụ: lấy giá trị đầu tiên của đối tượng và hiển thị
+                        const firstKey = Object.keys(matrix[i][j])[0];
+                        const firstValue = Number(matrix[i][j][firstKey]);
+                        mainMatrix[i][j] = firstValue;
+                        Gr.G[i][j] = firstValue;
+                    } else {
+                        mainMatrix[i][j] = Number(matrix[i][j])
+                        Gr.G[i][j] = Number(matrix[i][j]);
+                    }
+                }
+            }
+
+
+            console.log("main matrix  :  ", mainMatrix)
+            console.log("Do thi la : ", Gr)
+            return matrix;
+
+
+
+
+        }
+
+
+        function outputGraph(Gr) {
+            for (let i = 0; i < Gr.n; i++) {
+                console.log(Gr.G[i].join(' '));
+            }
+        }
+
+        // Check if a vertex has been visited
+        function testGraph(a, v, Gr) {
+            return !v.includes(a);
+        }
+
+        // Find the next nearest vertex
+        function topNear(a, Gr, v) {
+            let min = 0;
+            let d = 1000;
+            for (let i = 1; i <= Gr.n; i++) {
+                const k = testGraph(i, v, Gr);
+                if (Gr.G[a][i] > 0 && k) {
+                    if (Gr.G[a][i] < d) {
+                        min = i;
+                        d = Gr.G[a][i];
+                    }
+                }
+            }
+            return min;
+        }
+
+        // Find the path using the heuristic algorithm
+        function findWay(start, Gr, v) {
+
+            console.log("cac quan : ", start)
+            let x = districts.indexOf(start);
+            console.log("cac x : ", x)
+
+            if (x == -1) {
+                alert('Invalid starting district name. Please enter a valid district name.');
+                return;
+            }
+            let e = x;
+            v[1] = x;
+            for (let i = 2; i <= Gr.n; i++) {
+                const next = topNear(e, Gr, v);
+                v[i] = next;
+                e = next;
+            }
+            v[Gr.n + 1] = x;
+        }
+
+
+
+
+
+
+
+        function displayWeightMatrix(matrix) {
+            const weightMatrixContainer = document.getElementById('weightMatrixContainer');
+            const weightMatrixElement = document.getElementById('weightMatrix');
+
+            // Tạo bảng HTML để hiển thị ma trận
+            const table = document.createElement('table');
+            table.style.margin = 'auto';
+            table.style.borderCollapse = 'collapse';
+
+            // Tạo header cho bảng
+            const headerRow = document.createElement('tr');
+            for (let i = 0; i <= districts.length; i++) {
+                const cell = document.createElement('th');
+                cell.style.border = '1px solid white';
+                cell.style.padding = '8px';
+                if (i === 0) {
+                    cell.textContent = 'Bưu điện';
+                } else {
+                    cell.textContent = districts[i - 1];
+                }
+                headerRow.appendChild(cell);
+            }
+            table.appendChild(headerRow);
+
+            // Tạo các dòng và cột cho ma trận
+            for (let i = 0; i < districts.length; i++) {
+                const row = document.createElement('tr');
+
+                // Tiêu đề của hàng
+                const headerCell = document.createElement('th');
+                headerCell.style.border = '1px solid white';
+                headerCell.style.padding = '8px';
+                headerCell.textContent = districts[i];
+                row.appendChild(headerCell);
+
+                // Giá trị trong ma trận
+                for (let j = 0; j < districts.length; j++) {
+                    const cell = document.createElement('td');
+                    cell.style.border = '1px solid white';
+                    cell.style.padding = '8px';
+
+                    // Chuyển đối tượng thành chuỗi hoặc hiển thị giá trị cụ thể
+                    if (typeof matrix[i][j] === 'object') {
+                        // Ví dụ: lấy giá trị đầu tiên của đối tượng và hiển thị
+                        const firstKey = Object.keys(matrix[i][j])[0];
+                        const firstValue = matrix[i][j][firstKey];
+                        cell.textContent = `${firstValue}`;
+                    } else {
+                        cell.textContent = matrix[i][j];
+                    }
+
+                    row.appendChild(cell);
+                }
+
+                table.appendChild(row);
+            }
+
+            // Xóa nội dung cũ trong phần hiển thị và thêm bảng mới
+            while (weightMatrixElement.firstChild) {
+                weightMatrixElement.removeChild(weightMatrixElement.firstChild);
+            }
+            weightMatrixElement.appendChild(table);
+
+            // Hiển thị container
+            weightMatrixContainer.style.display = 'block';
+        }
+
+        // Gọi hàm displayWeightMatrix sau khi đã tạo ma trận trọng số
+
+
+
+
+        // Gọi hàm hiển thị ma trận trọng số sau khi đã nhập khoảng cách giữa các bưu điện
+        // displayWeightMatrix(yourWeightMatrix);
+
+        function drawGraph() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const districtPositions = [];
+            const angleIncrement = (2 * Math.PI) / districts.length;
+
+            for (let i = 0; i < districts.length; i++) {
+                const x = canvas.width / 2 + 200 * Math.cos(i * angleIncrement);
+                const y = canvas.height / 2 + 200 * Math.sin(i * angleIncrement);
+                districtPositions.push({ x, y });
+
+                ctx.beginPath();
+                ctx.arc(x, y, nodeRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = 'lightblue';
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = 'black';
+                ctx.font = `${fontSize}px Arial`;
+                ctx.fillText(districts[i], x - fontSize / 2, y + fontSize / 2);
+
+                drawLibraries(districts[i], districtPositions[i]);
+            }
+
+            // console.log("ma tran ne : ",createWeightMatrix())
+            // displayWeightMatrix(createWeightMatrix())
+            const weightMatrix = createWeightMatrix();
+            console.log("ma tran : ", weightMatrix)
+            displayWeightMatrix(weightMatrix);
+            drawDistances(districtPositions);
+        }
+
+        function drawLibraries(district, position) {
+            ctx.fillStyle = 'green';
+            ctx.font = `${fontSize}px Arial`;
+        }
+
+        function main(Gr) {
+
+            const v = new Array(Gr.n + 1);
+            // let start;
+
+            console.log('\nThe matrix of the input graph is:\n');
+            outputGraph(Gr);
+            console.log('\n');
+
+            console.log('Enter the starting vertex:');
+            // start = parseInt(prompt(), 10);
+
+            let start = window.prompt('Nhập tên bưu điện xuất phát (ví dụ: 1.1):');
+            findWay(start, Gr, v);
+
+            // let sum = 0;
+            for (let k = 1; k <= Gr.n; k++) {
+                sum += Gr.G[v[k]][v[k + 1]];
+            }
+            console.log('\nThe length of the path using the heuristic algorithm is:', sum);
+            console.log("v la : ", v)
+            v.shift()
+            console.log('\t', v.join(' '));
+            console.log("vvvv : ", v)
+            let listRunPost = "";
+            for (let i = 0; i < v.length; i++) {
+                // const districtIndex = v[i] - 1; // Adjust index to match districts array
+                listRunPost += districts[v[i]] + " ";
+            }
+            console.log("list ne : ", listRunPost)
+            return listRunPost
+
+
+        }
+        function openModal(path, sum) {
+            const modal = document.getElementById('resultModal');
+            const pathInfo = document.getElementById('pathInfo');
+            const sumInfo = document.getElementById('sumInfo');
+
+            pathInfo.textContent = `Đường đi: ${path}`;
+            sumInfo.textContent = `Tổng chiều dài: ${sum}`;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('resultModal');
+            modal.style.display = 'none';
+            document.getElementById('runButton').style.display = "none"
+
+        }
+
+
+        function animateRun(districtPositions) {
+            const orderString = main(Gr);
+
+            // Split the order string into an array of district names
+            const order = orderString.split(' ');
+
+            let currentIndex = 0;
+            const highlightInterval = setInterval(() => {
+                if (currentIndex >= order.length) {
+                    clearInterval(highlightInterval);
+                    openModal(orderString, sum);
+                    return;
+                }
+
+                const districtIndex = districts.indexOf(order[currentIndex]);
+                console.log('districtIndex:', districtIndex);
+
+                if (districtIndex !== -1) {
+                    const position = districtPositions[districtIndex];
+                    console.log('position:', position);
+
+                    ctx.beginPath();
+                    ctx.arc(position.x, position.y, nodeRadius + 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'yellow';
+                    // ctx.fill();
+                    ctx.lineWidth = 4; // Độ dày của đường viền (thay đổi giá trị theo nhu cầu)
+                    ctx.strokeStyle = 'red'; // Màu của đường viền (thay đổi giá trị theo nhu cầu)
+
+                    ctx.stroke();
+                }
+
+                currentIndex++;
+            }, 1000);
+        }
+
+
+
+
+
+        function drawDistances(districtPositions) {
+            for (let i = 0; i < districts.length; i++) {
+                for (let j = 0; j < districts.length; j++) {
+
+                    if (distances[districts[i]][districts[j]]) {
+                        const startX = districtPositions[i].x;
+                        const startY = districtPositions[i].y;
+                        const endX = districtPositions[j].x;
+                        const endY = districtPositions[j].y;
+
+                        const weightX = (startX + endX) / 2;
+                        const weightY = (startY + endY) / 2;
+
+                        // Loop through library pairs
+                        for (let library1 in distances[districts[i]][districts[j]]) {
+
+                            for (let library2 in distances[districts[i]][districts[j]][library1]) {
+
+                                // Check if the distance is not equal to 0
+                                if (distances[districts[i]][districts[j]][library1][library2] !== 0) {
+
+                                    ctx.beginPath();
+                                    ctx.moveTo(startX, startY);
+                                    ctx.lineTo(endX, endY);
+                                    ctx.strokeStyle = 'white';
+                                    ctx.stroke();
+                                    // ctx.lineWidth = 4;
+                                    ctx.fillStyle = 'red';
+                                    ctx.font = `bold ${fontSize}px Arial`;
+
+                                    for (let library1 in distances[districts[i]][districts[j]]) {
+                                        for (let library2 in distances[districts[i]][districts[j]][library1]) {
+                                            ctx.fillText(distances[districts[i]][districts[j]][library1][library2], weightX - fontSize / 2, weightY + fontSize / 2);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Draw weights
+                        // ...
+                    }
+                }
+            }
+
+            // main(Gr)
+            document.getElementById('runButton').addEventListener('click', () => animateRun(districtPositions));
+            document.getElementById('runButton').style.display = "block"
+        }
+
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
